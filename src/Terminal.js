@@ -1,6 +1,6 @@
 function createCanvasElement() {
 
-	const canvas = document.createElement('canvas');
+	const canvas = document.createElement( 'canvas' );
 	canvas.style.display = 'block';
 	return canvas;
 
@@ -13,6 +13,49 @@ function Terminal( parameters = {} ) {
 
 	let _width = _canvas.width;
 	let _height = _canvas.height;
+
+	// Public properties
+
+	this.domElement = _canvas;
+
+	// Initialize
+
+	let _gl = _context;
+
+	try {
+
+		if ( _gl === null ) {
+
+			_gl = _canvas.getContext( 'webgl' );
+
+			if ( _gl === null ) {
+
+				throw new Error( 'Unable to initialize WebGL. Your browser or machine may not support it.' );
+
+			}
+
+		}
+
+	} catch ( error ) {
+
+		console.error( 'TEXTMODE.Terminal: ' + error.message );
+		throw error;
+
+	}
+
+	function initGLContext() {
+
+		// Set clear color to opaque black
+		_gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+		// Clear the color buffer with specified clear color
+		_gl.clear(_gl.COLOR_BUFFER_BIT);
+
+	}
+
+	initGLContext();
+
+	// API
 
 	this.getSize = function() {
 
