@@ -11,8 +11,8 @@ const vertexSource = `
 
 	void main()
 	{
-			vTexCoords  = vertexPositionNDC * scale + scale; // Scale vertex attribute to [0, 1] range.
-			gl_Position = vec4(vertexPositionNDC, 0.0, 1.0);
+		vTexCoords  = vertexPositionNDC * scale + scale; // Scale vertex attribute to [0, 1] range.
+		gl_Position = vec4(vertexPositionNDC, 0.0, 1.0);
 	}
 `;
 
@@ -22,9 +22,14 @@ const fragmentSource = `
 
 	varying vec2 vTexCoords;
 
+	uniform sampler2D glyphTexture;
+	uniform sampler2D foregroundColor;
+	uniform sampler2D backgroundColor;
+
 	void main()
 	{
-			gl_FragColor = vec4(vTexCoords, 0, 1);
+		vec4 glyph = texture2D(glyphTexture, vTexCoords);
+		gl_FragColor = glyph;
 	}
 `;
 
