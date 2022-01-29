@@ -13,19 +13,35 @@
 	<body>
 		<script src="../build/textmode.js"></script>
 		<script>
+			var numCharsX = 45;
+			var numCharsY = 20;
+
 			var terminal = new TEXTMODE.Terminal(
 				{
 					fontUrl: './assets/qbicfeet_10x10.png',
+					width: 10 * numCharsX,
+					height: 10 * numCharsY,
 					charWidth: 10,
 					charHeight: 10
 				}
 			);
 			document.body.appendChild( terminal.domElement );
+
 			// Draw a red heart (glyph 3) at [1, 1] leaving the original background color intact.
 			// Coordinates start from [0, 0] so there is a margin of 1 character above and to the left of the heart.
 			terminal.drawChar( 1, 1, 3, new TEXTMODE.Color(255, 0, 0) );
+
 			// Write 'Hello, World!' in white on line 3
 			terminal.drawString( 1, 3, 'Hello, world!', new TEXTMODE.Color(255, 255, 255) );
+
+			// Draw an grey outlined box with upper left corner [1, 5] and bottom right corner [20, 9] inclusive.
+			// The default border style will be x's for corners and horizontal or vertical bars for sides.
+			terminal.drawRect( 1, 5, 18, 11, new TEXTMODE.Color(128, 128, 128) );
+			terminal.drawString( 3, 8, 'Default border', new TEXTMODE.Color(255, 255, 255) );
+
+			// You can also specify a custom border style for each corner and side, starting from the top left and moving clockwise.
+			terminal.drawRect( 20, 5, 36, 11, new TEXTMODE.Color(128, 128, 128), new TEXTMODE.Color(0, 0, 0), '1.2:3,4;')
+			terminal.drawString( 22, 8, 'Custom border', new TEXTMODE.Color(255, 255, 255) );
 		</script>
 	</body>
 </html>

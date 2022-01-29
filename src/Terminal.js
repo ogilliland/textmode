@@ -426,6 +426,46 @@ function Terminal( parameters = {} ) {
 
 	};
 
+	this.drawRect = function( x1, y1, x2, y2, foregroundColor, backgroundColor, border ) {
+
+		// Set default border if none provided.
+		if (border == undefined) {
+			border = 'x-x|x-x|';
+		}
+
+		// Ensure that border is always 8 characters long.
+		if (border.length < 8) {
+			border += ' '.repeat( 8 - border.length );
+		}
+
+		var characters = border.split('');
+
+		// Draw top and bottom bars.
+		for (var i = 1; i <= x2 - x1; i++) {
+			_this.drawChar( x1 + i, y1, characters[1].charCodeAt(0), foregroundColor, backgroundColor );
+			_this.drawChar( x1 + i, y2, characters[5].charCodeAt(0), foregroundColor, backgroundColor );
+		}
+
+		// Draw left and right bars.
+		for (var j = 1; j <= y2 - y1; j++) {
+			_this.drawChar( x1, y1 + j, characters[7].charCodeAt(0), foregroundColor, backgroundColor );
+			_this.drawChar( x2, y1 + j, characters[3].charCodeAt(0), foregroundColor, backgroundColor );
+		}
+
+		// Draw top left corner.
+		_this.drawChar( x1, y1, characters[0].charCodeAt(0), foregroundColor, backgroundColor );
+
+		// Draw top right corner.
+		_this.drawChar( x2, y1, characters[2].charCodeAt(0), foregroundColor, backgroundColor );
+
+		// Draw bottom right corner.
+		_this.drawChar( x2, y2, characters[4].charCodeAt(0), foregroundColor, backgroundColor );
+
+		// Draw bottom left corner.
+		_this.drawChar( x1, y2, characters[6].charCodeAt(0), foregroundColor, backgroundColor );
+
+	}
+
 }
 
 export { Terminal };
