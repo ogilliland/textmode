@@ -4,6 +4,13 @@ function createCanvasElement() {
 
 	const canvas = document.createElement( 'canvas' );
 	canvas.style.display = 'block';
+
+	// Draw crisp pixels without smoothing.
+	canvas.style.imageRendering = '-moz-crisp-edges';
+	canvas.style.imageRendering = '-webkit-crisp-edges';
+	canvas.style.imageRendering = 'pixelated';
+	canvas.style.imageRendering = 'crisp-edges';
+
 	return canvas;
 
 }
@@ -15,6 +22,10 @@ function Terminal( parameters = {} ) {
 	const _scale = parameters.scale !== undefined ? parameters.scale : 1;
 	const _charWidth = parameters.charWidth !== undefined ? parameters.charWidth : 8;
 	const _charHeight = parameters.charHeight !== undefined ? parameters.charHeight : 8;
+
+	// TO DO: Create a proper fallback font, either generated dynamically or included as base64 image data.
+	// Currently fontURL is a mandatory field.
+	const _fontUrl = parameters.fontUrl;
 
 	let _numCharsX = Math.floor(_width / _charWidth);
 	let _numCharsY = Math.floor(_height / _charHeight);
@@ -110,6 +121,8 @@ function Terminal( parameters = {} ) {
 				vertexPositionNDC: _gl.getAttribLocation( _shaderProgram, 'vertexPositionNDC' ),
 			},
 			uniformLocations: {
+				numChars: _gl.getUniformLocation( _shaderProgram, 'numChars' ),
+				fontTexture: _gl.getUniformLocation( _shaderProgram, 'fontTexture' ),
 				glyphTexture: _gl.getUniformLocation( _shaderProgram, 'glyphTexture' ),
 				foregroundColor: _gl.getUniformLocation( _shaderProgram, 'foregroundColor' ),
 				backgroundColor: _gl.getUniformLocation( _shaderProgram, 'backgroundColor' )
@@ -169,19 +182,6 @@ function Terminal( parameters = {} ) {
 		const srcType = gl.UNSIGNED_BYTE;
 		const pixels = new Uint8Array( numChannels * width * height );
 
-		// Useful for debugging, but in production the default should be 0 when no content is drawn.
-		/*
-		for ( var y = 0; y < height; y++ ) {
-			for ( var x = 0; x < width; x++ ) {
-				var index = (y * width + x);
-				for (var c = 0; c < numChannels; c++) {
-					pixels[index * numChannels + c] = 255; // Initialize to opaque white by setting all channels to 255.
-				}
-			}
-		}
-		*/
-		
-
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			level,
@@ -194,7 +194,7 @@ function Terminal( parameters = {} ) {
 			pixels
 		);
 
-		// set the filtering so we don't need mips and it's not filtered
+		// Set the filtering so we don't need mips and it's not filtered.
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE );
@@ -214,6 +214,63 @@ function Terminal( parameters = {} ) {
 				srcType: srcType
 			}
 		};
+
+	}
+
+	// Used to load external images into WebGL textures.
+	function loadTexture( gl, url ) {
+
+		const texture = gl.createTexture();
+		gl.bindTexture( gl.TEXTURE_2D, texture );
+
+		// Because images have to be downloaded over the internet they might take a moment until they are ready.
+		// Until then put a single pixel in the texture so we can use it immediately.
+		// When the image has finished downloading we'll update the texture with the contents of the image.
+		const level = 0;
+		const internalFormat = gl.LUMINANCE;
+		const width = 1;
+		const height = 1;
+		const border = 0;
+		const srcFormat = gl.LUMINANCE;
+		const srcType = gl.UNSIGNED_BYTE;
+		const pixel = new Uint8Array(1);  // Single opaque black pixel.
+
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			level,
+			internalFormat,
+			width,
+			height,
+			border,
+			srcFormat,
+			srcType,
+			pixel
+		);
+
+		const image = new Image();
+		image.onload = function() {
+
+			gl.bindTexture( gl.TEXTURE_2D, texture );
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				level,
+				internalFormat,
+				srcFormat,
+				srcType,
+				image
+			);
+
+			// Set the filtering so we don't need mips and it's not filtered.
+			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE );
+			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE );
+			
+		};
+
+		image.src = url;
+
+		return texture;
 
 	}
 
@@ -240,6 +297,8 @@ function Terminal( parameters = {} ) {
 		foreground: initTexture( _gl, _numCharsX, _numCharsY ),
 		background: initTexture( _gl, _numCharsX, _numCharsY )
 	};
+
+	let _fontTexture = loadTexture( _gl, _fontUrl );
 
 	function drawScene( gl, programInfo, buffers, textures ) {
 
@@ -269,20 +328,27 @@ function Terminal( parameters = {} ) {
 			gl.enableVertexAttribArray( programInfo.attribLocations.vertexPositionNDC );
 		}
 
-		// Bind glyph texture to texture unit 0.
+		gl.uniform2f( programInfo.uniformLocations.numChars, _numCharsX, _numCharsY );
+
+		// Bind font texture to texture unit 0.
 		gl.activeTexture( gl.TEXTURE0 );
-		gl.bindTexture( gl.TEXTURE_2D, textures.glyph.glTexture );
+		gl.bindTexture( gl.TEXTURE_2D, _fontTexture );
 		gl.uniform1i( programInfo.uniformLocations.glyphTexture, 0 );
 
-		// Bind foreground color to texture unit 1.
+		// Bind glyph texture to texture unit 1.
 		gl.activeTexture( gl.TEXTURE1 );
-		gl.bindTexture( gl.TEXTURE_2D, textures.foreground.glTexture );
-		gl.uniform1i( programInfo.uniformLocations.foregroundColor, 1 );
+		gl.bindTexture( gl.TEXTURE_2D, textures.glyph.glTexture );
+		gl.uniform1i( programInfo.uniformLocations.glyphTexture, 1 );
 
-		// Bind background color to texture unit 2.
+		// Bind foreground color to texture unit 2.
 		gl.activeTexture( gl.TEXTURE2 );
+		gl.bindTexture( gl.TEXTURE_2D, textures.foreground.glTexture );
+		gl.uniform1i( programInfo.uniformLocations.foregroundColor, 2 );
+
+		// Bind background color to texture unit 3.
+		gl.activeTexture( gl.TEXTURE3 );
 		gl.bindTexture( gl.TEXTURE_2D, textures.background.glTexture );
-		gl.uniform1i( programInfo.uniformLocations.backgroundColor, 2 );
+		gl.uniform1i( programInfo.uniformLocations.backgroundColor, 3 );
 
 		{
 
@@ -309,29 +375,36 @@ function Terminal( parameters = {} ) {
 
 	this.setChar = function( x, y, glyph, foregroundColor, backgroundColor ) {
 
-		// Do not attempt to set invalid glyphs or invalid positions.
+		// Do not attempt to set invalid positions.
 		if ( x < 0 || x >= _numCharsX ) return;
 		if ( y < 0 || y >= _numCharsY ) return;
-		if ( glyph < 0 || glyph > 255 ) return;
 
-		y = _numCharsY - y - 1; // Invert y so [0, 0] is at the top left of the screen instead of bottom left.
 		var index = y * _numCharsX + x;
 
-		// Set glyph at [x, y] to char.
-		_textures.glyph.pixels[index] = glyph;
-		updateTexture( _gl, _textures.glyph );
+		if (glyph !== undefined) {
+			// Do not attempt to set invalid glyphs.
+			if ( glyph < 0 || glyph > 255 ) return;
 
-		// Set foreground pixels at [x, y] to foregroundColor.
-		_textures.foreground.pixels[index * 3] = foregroundColor.r;
-		_textures.foreground.pixels[index * 3 + 1] = foregroundColor.g;
-		_textures.foreground.pixels[index * 3 + 2] = foregroundColor.b;
-		updateTexture( _gl, _textures.foreground );
+			// Set glyph at [x, y] to char.
+			_textures.glyph.pixels[index] = glyph;
+			updateTexture( _gl, _textures.glyph );
+		}
 
-		// Set background pixels at [x, y] to backgroundColor.
-		_textures.background.pixels[index * 3] = backgroundColor.r;
-		_textures.background.pixels[index * 3 + 1] = backgroundColor.g;
-		_textures.background.pixels[index * 3 + 2] = backgroundColor.b;
-		updateTexture( _gl, _textures.background );
+		if (foregroundColor !== undefined) {
+			// Set foreground pixels at [x, y] to foregroundColor.
+			_textures.foreground.pixels[index * 3] = foregroundColor.r;
+			_textures.foreground.pixels[index * 3 + 1] = foregroundColor.g;
+			_textures.foreground.pixels[index * 3 + 2] = foregroundColor.b;
+			updateTexture( _gl, _textures.foreground );
+		}
+
+		if (backgroundColor !== undefined) {
+			// Set background pixels at [x, y] to backgroundColor.
+			_textures.background.pixels[index * 3] = backgroundColor.r;
+			_textures.background.pixels[index * 3 + 1] = backgroundColor.g;
+			_textures.background.pixels[index * 3 + 2] = backgroundColor.b;
+			updateTexture( _gl, _textures.background );
+		}
 
 	}
 
