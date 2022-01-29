@@ -184,6 +184,7 @@ function Terminal( parameters = {} ) {
 		const srcType = gl.UNSIGNED_BYTE;
 		const pixels = new Uint8Array( numChannels * width * height );
 
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			level,
@@ -237,6 +238,7 @@ function Terminal( parameters = {} ) {
 		const srcType = gl.UNSIGNED_BYTE;
 		const pixel = new Uint8Array(1);  // Single opaque black pixel.
 
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			level,
@@ -253,6 +255,7 @@ function Terminal( parameters = {} ) {
 		image.onload = function() {
 
 			gl.bindTexture( gl.TEXTURE_2D, texture );
+			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 			gl.texImage2D(
 				gl.TEXTURE_2D,
 				level,
@@ -279,6 +282,7 @@ function Terminal( parameters = {} ) {
 	function updateTexture( gl, texture ) {
 
 		gl.bindTexture( gl.TEXTURE_2D, texture.glTexture );
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			texture.params.level,
@@ -370,7 +374,7 @@ function Terminal( parameters = {} ) {
 		updateTexture( _gl, _textures.background );
 
 		drawScene( _gl, _programInfo, _buffers, _textures );
-		
+
 		window.requestAnimationFrame(update);
 
 	}
@@ -411,16 +415,16 @@ function Terminal( parameters = {} ) {
 			_textures.background.pixels[index * 3 + 2] = backgroundColor.b;
 		}
 
-	}
+	};
 
 	this.drawString = function( x, y, text, foregroundColor, backgroundColor ) {
 
 		var characters = text.split('');
 		for (var i = 0; i < characters.length; i++) {
-			_this.drawChar( x + i, y, characters[i].charCodeAt(0), foregroundColor, backgroundColor )
+			_this.drawChar( x + i, y, characters[i].charCodeAt(0), foregroundColor, backgroundColor );
 		}
 
-	}
+	};
 
 }
 
