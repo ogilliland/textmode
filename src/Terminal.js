@@ -13,6 +13,11 @@ function Terminal( parameters = {} ) {
 	const _width = parameters.width !== undefined ? parameters.width : 320;
 	const _height = parameters.height !== undefined ? parameters.height : 200;
 	const _scale = parameters.scale !== undefined ? parameters.scale : 1;
+	const _charWidth = parameters.charWidth !== undefined ? parameters.charWidth : 8;
+	const _charHeight = parameters.charHeight !== undefined ? parameters.charHeight : 8;
+
+	let _numCharsX = Math.floor(_width / _charWidth);
+	let _numCharsY = Math.floor(_height / _charHeight);
 
 	const _canvas = createCanvasElement();
 	_canvas.width = _width;
@@ -156,13 +161,13 @@ function Terminal( parameters = {} ) {
 		const texture = gl.createTexture();
 		gl.bindTexture( gl.TEXTURE_2D, texture );
 
-		const level = 0;
-		const border = 0;
 		const numChannels = rgb ? 3 : 1;
+		const level = 0;
 		const internalFormat = rgb ? gl.RGB : gl.LUMINANCE;
+		const border = 0;
 		const srcFormat = rgb ? gl.RGB : gl.LUMINANCE;
 		const srcType = gl.UNSIGNED_BYTE;
-		const pixels = new Uint8Array(numChannels * width * height);
+		const pixels = new Uint8Array( numChannels * width * height );
 
 		// Useful for debugging, but in production the default should be 0 when no content is drawn.
 		/*
@@ -195,15 +200,45 @@ function Terminal( parameters = {} ) {
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE );
 
-		return texture;
+		return {
+			pixels: pixels,
+			glTexture: texture,
+			params: {
+				numChannels: numChannels,
+				level: level,
+				internalFormat: internalFormat,
+				width: width,
+				height: height,
+				border: border,
+				srcFormat: srcFormat,
+				srcType: srcType
+			}
+		};
+
+	}
+
+	function updateTexture( gl, texture ) {
+
+		gl.bindTexture( gl.TEXTURE_2D, texture.glTexture );
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			texture.params.level,
+			texture.params.internalFormat,
+			texture.params.width,
+			texture.params.height,
+			texture.params.border,
+			texture.params.srcFormat,
+			texture.params.srcType,
+			texture.pixels
+		);
 
 	}
 
 	// Initilize textures for glyph, foreground color, and background color.
 	let _textures = {
-		glyphTexture: initTexture( _gl, _width, _height, false ),
-		foregroundColor: initTexture( _gl, _width, _height ),
-		backgroundColor: initTexture( _gl, _width, _height )
+		glyph: initTexture( _gl, _numCharsX, _numCharsY, false ),
+		foreground: initTexture( _gl, _numCharsX, _numCharsY ),
+		background: initTexture( _gl, _numCharsX, _numCharsY )
 	};
 
 	function drawScene( gl, programInfo, buffers, textures ) {
@@ -236,17 +271,17 @@ function Terminal( parameters = {} ) {
 
 		// Bind glyph texture to texture unit 0.
 		gl.activeTexture( gl.TEXTURE0 );
-		gl.bindTexture( gl.TEXTURE_2D, textures.glyphTexture );
+		gl.bindTexture( gl.TEXTURE_2D, textures.glyph.glTexture );
 		gl.uniform1i( programInfo.uniformLocations.glyphTexture, 0 );
 
 		// Bind foreground color to texture unit 1.
 		gl.activeTexture( gl.TEXTURE1 );
-		gl.bindTexture( gl.TEXTURE_2D, textures.foregroundColor );
+		gl.bindTexture( gl.TEXTURE_2D, textures.foreground.glTexture );
 		gl.uniform1i( programInfo.uniformLocations.foregroundColor, 1 );
 
 		// Bind background color to texture unit 2.
 		gl.activeTexture( gl.TEXTURE2 );
-		gl.bindTexture( gl.TEXTURE_2D, textures.backgroundColor );
+		gl.bindTexture( gl.TEXTURE_2D, textures.background.glTexture );
 		gl.uniform1i( programInfo.uniformLocations.backgroundColor, 2 );
 
 		{
@@ -259,7 +294,46 @@ function Terminal( parameters = {} ) {
 
 	}
 
-	drawScene( _gl, _programInfo, _buffers, _textures );
+	function update() {
+
+		drawScene( _gl, _programInfo, _buffers, _textures );
+		window.requestAnimationFrame(update);
+
+	}
+
+	update();
+
+	//
+	// API
+	//
+
+	this.setChar = function( x, y, glyph, foregroundColor, backgroundColor ) {
+
+		// Do not attempt to set invalid glyphs or invalid positions.
+		if ( x < 0 || x >= _numCharsX ) return;
+		if ( y < 0 || y >= _numCharsY ) return;
+		if ( glyph < 0 || glyph > 255 ) return;
+
+		y = _numCharsY - y - 1; // Invert y so [0, 0] is at the top left of the screen instead of bottom left.
+		var index = y * _numCharsX + x;
+
+		// Set glyph at [x, y] to char.
+		_textures.glyph.pixels[index] = glyph;
+		updateTexture( _gl, _textures.glyph );
+
+		// Set foreground pixels at [x, y] to foregroundColor.
+		_textures.foreground.pixels[index * 3] = foregroundColor.r;
+		_textures.foreground.pixels[index * 3 + 1] = foregroundColor.g;
+		_textures.foreground.pixels[index * 3 + 2] = foregroundColor.b;
+		updateTexture( _gl, _textures.foreground );
+
+		// Set background pixels at [x, y] to backgroundColor.
+		_textures.background.pixels[index * 3] = backgroundColor.r;
+		_textures.background.pixels[index * 3 + 1] = backgroundColor.g;
+		_textures.background.pixels[index * 3 + 2] = backgroundColor.b;
+		updateTexture( _gl, _textures.background );
+
+	}
 
 }
 
