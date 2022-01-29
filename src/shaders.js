@@ -33,8 +33,9 @@ const fragmentSource = `
 
 	void main()
 	{
-		vec2 uvMod = mod(vTexCoords, vec2(1.0/numChars.x, 1.0/numChars.y));
-		vec2 uv = vTexCoords - uvMod;
+		vec2 charSize = vec2(1.0/numChars.x, 1.0/numChars.y); // Size of 1 character as fraction of UV space.
+		vec2 uvMod = mod(vTexCoords, charSize);
+		vec2 uv = vTexCoords - uvMod + 0.5 * charSize;
 		float glyph = texture2D(glyphTexture, uv).r;
 		vec3 fg = texture2D(foregroundColor, uv).rgb;
 		vec3 bg = texture2D(backgroundColor, uv).rgb;
