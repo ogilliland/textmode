@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "npm run dev",
 		"build": "rollup -c",
-		"dev": "concurrently \"rollup -c -w -m inline\" \"http-server -p 8080\"",
+		"dev": "concurrently \"rollup -c -w -m inline\" \"http-server -p 8080 -c-1\"",
 		"lint": "eslint src --ext js --fix"
 	},
 	"repository": {
