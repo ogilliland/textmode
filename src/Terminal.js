@@ -364,7 +364,13 @@ function Terminal( parameters = {} ) {
 
 	function update() {
 
+		// Update textures using latest values in pixel arrays.
+		updateTexture( _gl, _textures.glyph );
+		updateTexture( _gl, _textures.foreground );
+		updateTexture( _gl, _textures.background );
+
 		drawScene( _gl, _programInfo, _buffers, _textures );
+		
 		window.requestAnimationFrame(update);
 
 	}
@@ -389,7 +395,6 @@ function Terminal( parameters = {} ) {
 
 			// Set glyph at [x, y] to char.
 			_textures.glyph.pixels[index] = glyph;
-			updateTexture( _gl, _textures.glyph );
 		}
 
 		if (foregroundColor !== undefined) {
@@ -397,7 +402,6 @@ function Terminal( parameters = {} ) {
 			_textures.foreground.pixels[index * 3] = foregroundColor.r;
 			_textures.foreground.pixels[index * 3 + 1] = foregroundColor.g;
 			_textures.foreground.pixels[index * 3 + 2] = foregroundColor.b;
-			updateTexture( _gl, _textures.foreground );
 		}
 
 		if (backgroundColor !== undefined) {
@@ -405,7 +409,6 @@ function Terminal( parameters = {} ) {
 			_textures.background.pixels[index * 3] = backgroundColor.r;
 			_textures.background.pixels[index * 3 + 1] = backgroundColor.g;
 			_textures.background.pixels[index * 3 + 2] = backgroundColor.b;
-			updateTexture( _gl, _textures.background );
 		}
 
 	}

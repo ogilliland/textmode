@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>TEXTMODE | Screen Writing Stress Test</title>
+		<style>
+			body {
+				margin: 0;
+				background-color: #000000;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="//mrdoob.github.io/stats.js/build/stats.min.js"></script>
+		<script src="../build/textmode.js"></script>
+		<script>
+			function randRange( min, max ) {
+
+				return Math.floor( Math.random() * (max - min + 1) + min );
+
+			}
+
+			var stats = new Stats();
+			stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+			document.body.appendChild( stats.dom );
+
+			var numCharsX = 96;
+			var numCharsY = 96;
+
+			var terminal = new TEXTMODE.Terminal(
+				{
+					fontUrl: './assets/qbicfeet_10x10.png',
+					width: 10 * numCharsX,
+					height: 10 * numCharsY,
+					charWidth: 10,
+					charHeight: 10
+				}
+			);
+			document.body.appendChild( terminal.domElement );
+
+			function animate() {
+
+				stats.begin();
+
+				for (var y = 0; y < numCharsY; y++) {
+					for (var x = 0; x < numCharsX; x++) {
+						terminal.drawChar(
+							x,
+							y,
+							randRange(0, 255),
+							new TEXTMODE.Color(randRange(0, 255), randRange(0, 255), randRange(0, 255)),
+							new TEXTMODE.Color(randRange(0, 255), randRange(0, 255), randRange(0, 255))
+						);
+					}
+				}
+
+				stats.end();
+
+				window.requestAnimationFrame(animate);
+
+			}
+			
+			animate();
+
+		</script>
+	</body>
+</html>
