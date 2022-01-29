@@ -28,8 +28,8 @@ const fragmentSource = `
 
 	void main()
 	{
-		vec4 glyph = texture2D(glyphTexture, vTexCoords);
-		gl_FragColor = glyph;
+		float glyph = texture2D(glyphTexture, vTexCoords).r;
+		gl_FragColor = vec4(glyph, 0, 0, 1);
 	}
 `;
 

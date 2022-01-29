@@ -130,13 +130,13 @@ function Terminal( parameters = {} ) {
 		// Create an array of vertices for the quad.
 		const vertices = [
 			// First triangle:
-				 1.0,  1.0,
+			1.0,  1.0,
 			-1.0,  1.0,
 			-1.0, -1.0,
 			// Second triangle:
 			-1.0, -1.0,
-				 1.0, -1.0,
-				 1.0,  1.0
+			1.0, -1.0,
+			1.0,  1.0
 		];
 
 		// Pass the list of vertices into WebGL to build the shape.
@@ -151,27 +151,42 @@ function Terminal( parameters = {} ) {
 	let _buffers = initBuffers(_gl);
 
 	// Helper function to initialise a new texture.
-	function initTexture( gl, width, height ) {
+	function initTexture( gl, width, height, rgb = true ) {
 
 		const texture = gl.createTexture();
 		gl.bindTexture( gl.TEXTURE_2D, texture );
 
 		const level = 0;
-		const internalFormat = gl.RGB;
 		const border = 0;
-		const srcFormat = gl.RGB;
+		const numChannels = rgb ? 3 : 1;
+		const internalFormat = rgb ? gl.RGB : gl.LUMINANCE;
+		const srcFormat = rgb ? gl.RGB : gl.LUMINANCE;
 		const srcType = gl.UNSIGNED_BYTE;
-		const pixel = new Uint8Array( [255, 0, 0] );  // Opaque red.
+		const pixels = new Uint8Array(numChannels * width * height);
+
+		// Useful for debugging, but in production the default should be 0 when no content is drawn.
+		/*
+		for ( var y = 0; y < height; y++ ) {
+			for ( var x = 0; x < width; x++ ) {
+				var index = (y * width + x);
+				for (var c = 0; c < numChannels; c++) {
+					pixels[index * numChannels + c] = 255; // Initialize to opaque white by setting all channels to 255.
+				}
+			}
+		}
+		*/
+		
+
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			level,
 			internalFormat,
-			1, // width
-			1, // height
+			width,
+			height,
 			border,
 			srcFormat,
 			srcType,
-			pixel
+			pixels
 		);
 
 		// set the filtering so we don't need mips and it's not filtered
@@ -185,9 +200,8 @@ function Terminal( parameters = {} ) {
 	}
 
 	// Initilize textures for glyph, foreground color, and background color.
-	// TO DO: make foreground color and background color gl.RGB (3 channels), and make glyph gl.LUMINANCE (1 channel).
 	let _textures = {
-		glyphTexture: initTexture( _gl, _width, _height ),
+		glyphTexture: initTexture( _gl, _width, _height, false ),
 		foregroundColor: initTexture( _gl, _width, _height ),
 		backgroundColor: initTexture( _gl, _width, _height )
 	};
