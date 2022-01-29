@@ -46,6 +46,8 @@ function Terminal( parameters = {} ) {
 	// Initialize
 	//
 
+	const _this = this;
+
 	// Get canvas context.
 	let _gl;
 
@@ -373,7 +375,7 @@ function Terminal( parameters = {} ) {
 	// API
 	//
 
-	this.setChar = function( x, y, glyph, foregroundColor, backgroundColor ) {
+	this.drawChar = function( x, y, glyph, foregroundColor, backgroundColor ) {
 
 		// Do not attempt to set invalid positions.
 		if ( x < 0 || x >= _numCharsX ) return;
@@ -404,6 +406,15 @@ function Terminal( parameters = {} ) {
 			_textures.background.pixels[index * 3 + 1] = backgroundColor.g;
 			_textures.background.pixels[index * 3 + 2] = backgroundColor.b;
 			updateTexture( _gl, _textures.background );
+		}
+
+	}
+
+	this.drawString = function( x, y, text, foregroundColor, backgroundColor ) {
+
+		var characters = text.split('');
+		for (var i = 0; i < characters.length; i++) {
+			_this.drawChar( x + i, y, characters[i].charCodeAt(0), foregroundColor, backgroundColor )
 		}
 
 	}
