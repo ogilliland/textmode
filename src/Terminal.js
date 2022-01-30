@@ -1,4 +1,5 @@
 import { vertexSource, fragmentSource } from './shaders.js';
+import { Color } from './Color.js';
 
 function createCanvasElement() {
 
@@ -394,6 +395,10 @@ function Terminal( parameters = {} ) {
 		var index = y * _numCharsX + x;
 
 		if (glyph !== undefined) {
+			if (typeof glyph == 'string') {
+				glyph = glyph.charCodeAt(0);
+			}
+
 			// Do not attempt to set invalid glyphs.
 			if ( glyph < 0 || glyph > 255 ) return;
 
@@ -402,6 +407,10 @@ function Terminal( parameters = {} ) {
 		}
 
 		if (foregroundColor !== undefined) {
+			if (typeof foregroundColor == 'string') {
+				foregroundColor = new Color(foregroundColor);
+			}
+
 			// Set foreground pixels at [x, y] to foregroundColor.
 			_textures.foreground.pixels[index * 3] = foregroundColor.r;
 			_textures.foreground.pixels[index * 3 + 1] = foregroundColor.g;
@@ -409,6 +418,10 @@ function Terminal( parameters = {} ) {
 		}
 
 		if (backgroundColor !== undefined) {
+			if (typeof backgroundColor == 'string') {
+				backgroundColor = new Color(backgroundColor);
+			}
+
 			// Set background pixels at [x, y] to backgroundColor.
 			_textures.background.pixels[index * 3] = backgroundColor.r;
 			_textures.background.pixels[index * 3 + 1] = backgroundColor.g;
@@ -421,7 +434,7 @@ function Terminal( parameters = {} ) {
 
 		var characters = text.split('');
 		for (var i = 0; i < characters.length; i++) {
-			_this.drawChar( x + i, y, characters[i].charCodeAt(0), foregroundColor, backgroundColor );
+			_this.drawChar( x + i, y, characters[i], foregroundColor, backgroundColor );
 		}
 
 	};
@@ -442,27 +455,27 @@ function Terminal( parameters = {} ) {
 
 		// Draw top and bottom bars.
 		for (var i = 1; i <= x2 - x1; i++) {
-			_this.drawChar( x1 + i, y1, characters[1].charCodeAt(0), foregroundColor, backgroundColor );
-			_this.drawChar( x1 + i, y2, characters[5].charCodeAt(0), foregroundColor, backgroundColor );
+			_this.drawChar( x1 + i, y1, characters[1], foregroundColor, backgroundColor );
+			_this.drawChar( x1 + i, y2, characters[5], foregroundColor, backgroundColor );
 		}
 
 		// Draw left and right bars.
 		for (var j = 1; j <= y2 - y1; j++) {
-			_this.drawChar( x1, y1 + j, characters[7].charCodeAt(0), foregroundColor, backgroundColor );
-			_this.drawChar( x2, y1 + j, characters[3].charCodeAt(0), foregroundColor, backgroundColor );
+			_this.drawChar( x1, y1 + j, characters[7], foregroundColor, backgroundColor );
+			_this.drawChar( x2, y1 + j, characters[3], foregroundColor, backgroundColor );
 		}
 
 		// Draw top left corner.
-		_this.drawChar( x1, y1, characters[0].charCodeAt(0), foregroundColor, backgroundColor );
+		_this.drawChar( x1, y1, characters[0], foregroundColor, backgroundColor );
 
 		// Draw top right corner.
-		_this.drawChar( x2, y1, characters[2].charCodeAt(0), foregroundColor, backgroundColor );
+		_this.drawChar( x2, y1, characters[2], foregroundColor, backgroundColor );
 
 		// Draw bottom right corner.
-		_this.drawChar( x2, y2, characters[4].charCodeAt(0), foregroundColor, backgroundColor );
+		_this.drawChar( x2, y2, characters[4], foregroundColor, backgroundColor );
 
 		// Draw bottom left corner.
-		_this.drawChar( x1, y2, characters[6].charCodeAt(0), foregroundColor, backgroundColor );
+		_this.drawChar( x1, y2, characters[6], foregroundColor, backgroundColor );
 
 	}
 
