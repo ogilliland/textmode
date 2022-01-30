@@ -15,6 +15,18 @@ function createCanvasElement() {
 
 }
 
+/**
+ * Generate a new virtual terminal
+ * 
+ * @param {Object} parameters Input parameters
+ * @param {number} parameters.width The width of the resulting canvas in pixels
+ * @param {number} parameters.height The height of the resulting canvas in pixels
+ * @param {number} parameters.scale Upscale the canvas by this ratio for display on page
+ * @param {number} parameters.charWidth The width of each font character in pixels
+ * @param {number} parameters.charHeight The height of each font character in pixels
+ * @param {string} parameters.fontUrl Source URL for glyph font, must point to a valid image
+ * @returns {void}
+ */
 function Terminal( parameters = {} ) {
 
 	const _width = parameters.width !== undefined ? parameters.width : 320;

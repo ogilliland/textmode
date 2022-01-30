@@ -1,0 +1,2 @@
+sphinx-js>=3.1.2
+myst-parser>=0.16.1
