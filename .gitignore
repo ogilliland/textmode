@@ -1,8 +1,11 @@
 # Misc.
 .DS_Store
 
-# Exclude node modules from npm install
+# Node modules from npm install
 **/node_modules
 
-# Exclude built doc files
+# Built library files
+build/
+
+# Built documentation
 docs/_build/
